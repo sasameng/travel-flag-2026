@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026新年旅行FLAG海报生成器</title>
+    <!-- 引入html2canvas核心库 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        /* 表单样式 */
+        .wish-form {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .wish-form h2 {
+            text-align: center;
+            color: #2d7d9a;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        /* 表单分区标题 */
+        .form-section-title {
+            color: #2d7d9a;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-item {
+            margin-bottom: 18px;
+        }
+        .form-item label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-item input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        /* 三个目的地输入框容器 */
+        .destinations-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .destinations-group .form-item {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .destinations-group label {
+            font-size: 14px;
+            color: #666;
+        }
+        #generateBtn {
+            width: 100%;
+            padding: 12px;
+            background-color: #2d7d9a;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        #generateBtn:hover {
+            background-color: #23627a;
+        }
+
+        /* 海报容器 */
+        .poster-container {
+            max-width: 600px;
+            margin: 0 auto;
+            display: none;
+        }
+        /* 海报模板（使用你上传的背景图） */
+        #posterTemplate {
+            width: 100%;
+            height: 800px;
+            background: url("https://p11-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/016ae3eec9134367b1c35235fe5f2ed0.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=202512301105055115A15D78DD1DE51357&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767668706&x-signature=%2Fuv2RpkXzbVnVKK9gLkIgLbzKvw%3D") no-repeat center/cover;
+            border-radius: 15px;
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        /* 海报装饰遮罩（提升文字可读性） */
+        #posterTemplate::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.25);
+            z-index: 1;
+        }
+        /* 海报内容层（高于遮罩） */
+        .poster-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中，减少空白 */
+            color: #fff;
+            text-align: center; /* 全局文字居中 */
+        }
+        /* 海报标题 */
+        .poster-title {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 35px;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.6);
+            letter-spacing: 2px; /* 增加字间距更醒目 */
+        }
+        /* 海报分区标题 */
+        .poster-section-title {
+            font-size: 24px;
+            color: #ffd700;
+            font-weight: bold;
+            margin: 25px 0 15px 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            letter-spacing: 1px;
+        }
+        /* 用户信息展示 */
+        .user-info {
+            font-size: 20px;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            line-height: 2;
+        }
+        .user-info span {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        /* 目的地和回顾内容容器 */
+        .destinations-content, .review-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            line-height: 2.2;
+            color: #222;
+            margin: 0 auto 15px;
+            width: 90%; /* 限制宽度，居中显示 */
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .destinations-content strong, .review-content strong {
+            color: #2d7d9a;
+            font-size: 19px;
+        }
+        /* 保存按钮 */
+        #saveBtn {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        #saveBtn:hover {
+            background-color: #218838;
+        }
+
+        /* 响应式适配手机 */
+        @media (max-width: 600px) {
+            .destinations-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+            #posterTemplate {
+                height: 850px;
+                padding: 25px 15px;
+            }
+            .poster-title {
+                font-size: 32px;
+            }
+            .poster-section-title {
+                font-size: 20px;
+            }
+            .user-info {
+                font-size: 18px;
+            }
+            .destinations-content, .review-content {
+                font-size: 16px;
+                width: 95%;
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 填写表单 -->
+    <div class="wish-form">
+        <h2>我的2026新年旅行FLAG</h2>
+        
+        <div class="form-item">
+            <label for="username">你的名字</label>
+            <input type="text" id="username" placeholder="请输入你的名字" required>
+        </div>
+        <div class="form-item">
+            <label for="travelGoal">一个旅行小目标</label>
+            <input type="text" id="travelGoal" placeholder="例如：学会自由潜，早起看日出，带狗子出游等" required>
+        </div>
+
+        <!-- 最想解锁的三个旅行目的地 -->
+        <div class="form-section-title">新程待解锁</div>
+        <label style="margin-bottom: 8px; color: #333; font-weight: 500;">最想解锁的三个旅行目的地</label>
+        <div class="destinations-group">
+            <div class="form-item">
+                <label>目的地1（例：西班牙）</label>
+                <input type="text" id="dest1" placeholder="请输入第一个目的地">
+            </div>
+            <div class="form-item">
+                <label>目的地2（例：坦桑尼亚）</label>
+                <input type="text" id="dest2" placeholder="请输入第二个目的地">
+            </div>
+            <div class="form-item">
+                <label>目的地3（例：冰岛）</label>
+                <input type="text" id="dest3" placeholder="请输入第三个目的地">
+            </div>
+        </div>
+
+        <!-- 新增旅行回顾板块 -->
+        <div class="form-section-title">旅行回忆录</div>
+        <div class="form-item">
+            <label for="farthestPlace">去过最远的地方</label>
+            <input type="text" id="farthestPlace" placeholder="例如：南极，阿根廷，新西兰等">
+        </div>
+        <div class="form-item">
+            <label for="bestSunriseSunset">最美的日出/日落在哪里</label>
+            <input type="text" id="bestSunriseSunset" placeholder="例如：巴厘岛金巴兰海滩，青海湖等">
+        </div>
+        <div class="form-item">
+            <label for="perfectMeal">最完美的一餐</label>
+            <input type="text" id="perfectMeal" placeholder="例如：京都的怀石料理，曼谷的路边摊冬阴功等">
+        </div>
+
+        <button id="generateBtn">生成我的新年旅行FLAG海报</button>
+    </div>
+
+    <!-- 海报容器 -->
+    <div class="poster-container" id="posterContainer">
+        <div id="posterTemplate">
+            <div class="poster-content">
+                <h2 class="poster-title">2026 新年旅行FLAG</h2>
+                
+                <div class="user-info">
+                    <p>立flag人：<span id="showUsername"></span></p>
+                    <p>旅行小目标：<span id="showTravelGoal"></span></p>
+                </div>
+
+                <h3 class="poster-section-title">✨ 新程待解锁 ✨</h3>
+                <div class="destinations-content" id="showDestinations">
+                    <strong>最想解锁的旅行目的地：</strong><br>
+                    1. <span id="showDest1"></span><br>
+                    2. <span id="showDest2"></span><br>
+                    3. <span id="showDest3"></span>
+                </div>
+
+                <h3 class="poster-section-title">📝 旅行回忆录 📝</h3>
+                <div class="review-content" id="showReview">
+                    <strong>去过最远的地方：</strong><span id="showFarthestPlace"></span><br>
+                    <strong>最美的日出/日落：</strong><span id="showBestSunriseSunset"></span><br>
+                    <strong>最完美的一餐：</strong><span id="showPerfectMeal"></span>
+                </div>
+            </div>
+        </div>
+        <button id="saveBtn">保存海报到本地</button>
+    </div>
+
+    <script>
+        // 获取元素
+        const generateBtn = document.getElementById('generateBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const posterContainer = document.getElementById('posterContainer');
+        const posterTemplate = document.getElementById('posterTemplate');
+        
+        // 表单元素
+        const username = document.getElementById('username');
+        const travelGoal = document.getElementById('travelGoal');
+        const dest1 = document.getElementById('dest1');
+        const dest2 = document.getElementById('dest2');
+        const dest3 = document.getElementById('dest3');
+        // 旅行回顾表单元素
+        const farthestPlace = document.getElementById('farthestPlace');
+        const bestSunriseSunset = document.getElementById('bestSunriseSunset');
+        const perfectMeal = document.getElementById('perfectMeal');
+        
+        // 海报展示元素
+        const showUsername = document.getElementById('showUsername');
+        const showTravelGoal = document.getElementById('showTravelGoal');
+        const showDest1 = document.getElementById('showDest1');
+        const showDest2 = document.getElementById('showDest2');
+        const showDest3 = document.getElementById('showDest3');
+        const showFarthestPlace = document.getElementById('showFarthestPlace');
+        const showBestSunriseSunset = document.getElementById('showBestSunriseSunset');
+        const showPerfectMeal = document.getElementById('showPerfectMeal');
+
+        // 生成海报
+        generateBtn.addEventListener('click', function() {
+            // 验证必填项
+            if (!username.value.trim() || !travelGoal.value.trim()) {
+                alert('名字和旅行小目标不能为空哦！');
+                return;
+            }
+            // 填充基础内容到海报
+            showUsername.innerText = username.value.trim();
+            showTravelGoal.innerText = travelGoal.value.trim();
+            
+            // 填充待解锁目的地（未填写则显示“待探索”）
+            showDest1.innerText = dest1.value.trim() || '待探索';
+            showDest2.innerText = dest2.value.trim() || '待探索';
+            showDest3.innerText = dest3.value.trim() || '待探索';
+            
+            // 填充旅行回顾（未填写则显示“暂无记录”）
+            showFarthestPlace.innerText = farthestPlace.value.trim() || '暂无记录';
+            showBestSunriseSunset.innerText = bestSunriseSunset.value.trim() || '暂无记录';
+            showPerfectMeal.innerText = perfectMeal.value.trim() || '暂无记录';
+            
+            // 显示海报并滚动
+            posterContainer.style.display = 'block';
+            posterContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // 保存海报
+        saveBtn.addEventListener('click', function() {
+            html2canvas(posterTemplate, {
+                scale: 3, // 3倍高清生成，解决模糊
+                useCORS: true, // 支持跨域背景图
+                backgroundColor: null, // 保留背景原始样式
+                logging: false // 关闭控制台日志
+            }).then(canvas => {
+                const imgUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = imgUrl;
+                a.download = `${username.value.trim()}-2026新年旅行FLAG.png`;
+                a.click();
+                a.remove();
+                alert('旅行海报保存成功！快去分享吧～');
+            }).catch(err => {
+                console.error('生成失败：', err);
+                alert('海报保存失败，请刷新页面重试～');
+            });
+        });
+    </script>
+</body>
+</html>
